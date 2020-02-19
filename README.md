@@ -21,7 +21,7 @@ npm start
 
 ## Preview
 
-[![Google Books Search](https://github.com/EunsooJung/Google-Book-Search.git)](https://github.com/EunsooJung/Employee-Directory/blob/master/public/images/Employee-Directory-demo.gif)
+[![Google Books Search](https://github.com/EunsooJung/Google-Book-Search.git)](https://github.com/EunsooJung/Google-Book-Search/blob/master/client/public/images/%5BTeam%20IV%5D%20Google%20Book%20Search-Demo.gif)
 
 ## Usage
 
@@ -48,7 +48,7 @@ To start:
 
 - Project structure
 
-  [![Employee-Directory-Project-Structure](https://github.com/EunsooJung/Employee-Directory/blob/master/public/images/Project-Structure.png)]
+  [![Google Books Search Project Structure](https://github.com/EunsooJung/Google-Book-Search/blob/master/client/public/images/Project-Structure.png)]
 
 - Source Code Check point
 
@@ -57,58 +57,138 @@ To start:
 
 ```javascript
 /**
- * State Hook
+ * Client-Side: Search Component - client/pages/Search.js
  */
-// // Declare a new state variable, which we'll call "developerState"
-const [developerState, setDeveloperState] = useState({
-    users: [],
-    order: 'descend',
-    filteredUsers: [],
-    headings: [
-      { name: 'Image', width: '10%', order: 'descend' },
-      { name: 'name', width: '10%', order: 'descend' },
-      { name: 'phone', width: '20%', order: 'descend' },
-      { name: 'email', width: '20%', order: 'descend' },
-      { name: 'dob', width: '10%', order: 'descend' }
-    ]
-  });
-...
+state = {
+        value: "",
+        books: []
+    };
+
+    componentDidMount() {
+        this.searchBook();
+    }
+
+    makeBook = bookData => {
+        return {
+            _id: bookData.id,
+            title: bookData.volumeInfo.title,
+            authors: bookData.volumeInfo.authors,
+            description: bookData.volumeInfo.description,
+            image: bookData.volumeInfo.imageLinks.thumbnail,
+            link: bookData.volumeInfo.previewLink
+        }
+    }
+
+    searchBook = query => {
+        API.getBook(query)
+            .then(res => this.setState({ books: res.data.items.map(bookData => this.makeBook(bookData)) }))
+            .catch(err => console.error(err));
+    };
+
+    handleInputChange = event => {
+        const name = event.target.name;
+        const value = event.target.value;
+        this.setState({
+            [name]: value
+        });
+    };
+
+    handleFormSubmit = event => {
+        event.preventDefault();
+        this.searchBook(this.state.search);
+    };
+
+    render() {
+        return (
+            <div>
+                <Form
+                    search={this.state.search}
+                    handleInputChange={this.handleInputChange}
+                    handleFormSubmit={this.handleFormSubmit}
+                />
+                <div className="container">
+                    <h2>Results</h2>
+                    <Results books={this.state.books} />
+                </div>
+            </div>
+        )
+    }
+}
+```
+
+```javascript
 /**
- * Effect Hook: The Effect Hook lets you perform side effects in function components.
+ * API Call from Client to Server
  */
-// If you only want to run the function given to useEffect after the initial render, you can give it an empty array as second argument.
-  useEffect(() => {
-    RandomUserAPI.getUsers().then(results => {
-      console.log(results.data.results);
-      setDeveloperState({
-        ...developerState,
-        users: results.data.results,
-        filteredUsers: results.data.results
-      });
-    });
-  }, []);
-
-```
-
-1.2 Applied React Context: Context provides a way to pass data through the component tree without having to pass props down manually at every level. - utils/GridDataContext.js
-
-```javascript
-import React from 'react';
-
-const DataAreaContext = React.createContext({});
-
-export default DataAreaContext;
-```
-
-1.3 Applied axios to get external api's data
-
-```javascript
 import axios from 'axios';
 
 export default {
-  // Gets users from randomuser.me
-  getUsers: function() {
-    return axios.get('https://randomuser.me/api/?results=20&nat=us');
+  getBook: function(query) {
+    return axios.get(`https://www.googleapis.com/books/v1/volumes?q=${query}`);
+  },
+  // Deletes the book with the given id
+  deleteBook: function(id) {
+    return axios.delete('/api/books/' + id).then(result => result.data);
+  },
+  // Saves a book to the database
+  saveBook: function(bookData) {
+    return axios.post('/api/books', bookData).then(result => result.data);
+  },
+  // Get the saved a books from the database
+  savedBooks: function() {
+    return axios.get('/api/books').then(result => result.data);
+  }
+};
+```
+
+```javascript
+/**
+ * Server-Side: controller
+ */
+const db = require('../models');
+
+module.exports = {
+  findAll: function(req, res) {
+    db.Book.find(req.query)
+      .sort({ date: -1 })
+      .then(dbModel => res.json(dbModel))
+      .catch(err => {
+        console.error(err);
+        res.status(422).json(err);
+      });
+  },
+  findById: function(req, res) {
+    db.Book.findById(req.params.id)
+      .then(dbModel => res.json(dbModel))
+      .catch(err => {
+        console.error(err);
+        res.status(422).json(err);
+      });
+  },
+  create: function(req, res) {
+    db.Book.create(req.body)
+      .then(dbModel => res.json(dbModel))
+      .catch(err => {
+        console.error(err);
+        res.status(422).json(err);
+      });
+  },
+  update: function(req, res) {
+    db.Book.findOneAndUpdate({ _id: req.params.id }, req.body)
+      .then(dbModel => res.json(dbModel))
+      .catch(err => {
+        console.error(err);
+        res.status(422).json(err);
+      });
+  },
+  remove: function(req, res) {
+    db.Book.findById({ _id: req.params.id })
+      .then(dbModel => dbModel.remove())
+      .then(dbModel => res.json(dbModel))
+      .catch(err => {
+        console.error(err);
+        res.status(422).json(err);
+      });
   }
 };
 ```
@@ -125,6 +205,9 @@ export default {
 ## Authors
 
 - **Michael(Eunsoo)Jung**
+- **Lucas Coffee**
+- **Tai Le**
+- **Dexter Valencia**
 
 * [Google Books Search-Web-Application: Demo](https://search-books-using-google-api.herokuapp.com/)
 * [My Portfolio](https://eunsoojung.github.io/Responsive-Portfolio/portfolio.html)
