@@ -21,7 +21,7 @@ npm start
 
 ## Preview
 
-[![Google Books Search](https://github.com/EunsooJung/Google-Book-Search.git)](https://github.com/EunsooJung/Google-Book-Search/blob/master/client/public/images/%5BTeam%20IV%5D%20Google%20Book%20Search-Demo.gif)
+[![Google Books Search](https://github.com/EunsooJung/Google-Book-Search/blob/master/client/public/images/%5BTeam%20IV%5D%20Google%20Book%20Search-Demo.gif)](https://github.com/EunsooJung/Google-Book-Search/blob/master/client/public/images/%5BTeam%20IV%5D%20Google%20Book%20Search-Demo.gif)
 
 ## Usage
 
